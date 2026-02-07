@@ -1,0 +1,2989 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>B站直播弹幕工具 - 高级版</title>
+    <style>
+        /* ==================== CSS 变量系统 ==================== */
+        :root {
+            /* 主色调 - 现代渐变紫 */
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --primary-color: #667eea;
+            --primary-dark: #764ba2;
+            --primary-light: #8b9ff0;
+
+            /* 功能色 */
+            --success-color: #10b981;
+            --success-gradient: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+            --warning-color: #f59e0b;
+            --warning-gradient: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            --danger-color: #ef4444;
+            --danger-gradient: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+            --info-color: #3b82f6;
+            --info-gradient: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+
+            /* 背景色 - 扁平化浅色 */
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --bg-tertiary: #e2e8f0;
+            --bg-card: #ffffff;
+            --bg-glass: rgba(255, 255, 255, 0.95);
+
+            /* 文字色 */
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-tertiary: #94a3b8;
+            --text-white: #ffffff;
+
+            /* 边框色 */
+            --border-light: #e2e8f0;
+            --border-medium: #cbd5e1;
+            --border-dark: #94a3b8;
+
+            /* 阴影 - 柔和多层 */
+            --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.3);
+
+            /* 圆角 - 圆润设计 */
+            --radius-xs: 4px;
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 24px;
+            --radius-2xl: 32px;
+            --radius-full: 9999px;
+
+            /* 间距 */
+            --spacing-xs: 0.25rem;
+            --spacing-sm: 0.5rem;
+            --spacing-md: 1rem;
+            --spacing-lg: 1.5rem;
+            --spacing-xl: 2rem;
+            --spacing-2xl: 3rem;
+
+            /* 过渡 */
+            --transition-fast: 150ms ease;
+            --transition-base: 250ms ease;
+            --transition-slow: 350ms ease;
+
+            /* 字体 */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        /* ==================== 全局重置 ==================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ==================== 顶部导航栏 ==================== */
+        .navbar {
+            background: var(--primary-gradient);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            color: var(--text-white);
+            padding: var(--spacing-md) var(--spacing-xl);
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .navbar-content {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .navbar-logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-menu {
+            display: flex;
+            gap: var(--spacing-sm);
+            list-style: none;
+            background: rgba(255, 255, 255, 0.1);
+            padding: var(--spacing-xs);
+            border-radius: var(--radius-xl);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-menu-item {
+            cursor: pointer;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-full);
+            transition: all var(--transition-base);
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .navbar-menu-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(0);
+            transition: transform var(--transition-base);
+            border-radius: var(--radius-full);
+        }
+
+        .navbar-menu-item:hover::before {
+            transform: scale(1);
+        }
+
+        .navbar-menu-item.active {
+            background: rgba(255, 255, 255, 0.25);
+            font-weight: 600;
+        }
+
+        /* ==================== 主容器 ==================== */
+        .container {
+            max-width: 1400px;
+            margin: var(--spacing-xl) auto;
+            padding: 0 var(--spacing-lg);
+        }
+
+        /* ==================== 卡片样式 ==================== */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-base);
+            border: 1px solid var(--border-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            border-color: var(--border-medium);
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .card-title-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--primary-gradient);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+        }
+
+        /* ==================== 按钮样式 ==================== */
+        .btn {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-full);
+            border: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all var(--transition-base);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            position: relative;
+            overflow: hidden;
+            font-family: var(--font-family);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(rgba(255, 255, 255, 0.2), transparent);
+            opacity: 0;
+            transition: opacity var(--transition-fast);
+        }
+
+        .btn:hover::before {
+            opacity: 1;
+        }
+        
+        .btn-sm {
+            padding: var(--spacing-xs) var(--spacing-md);
+            font-size: 0.85rem;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: var(--text-white);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-success {
+            background: var(--success-gradient);
+            color: var(--text-white);
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.5);
+        }
+
+        .btn-danger {
+            background: var(--danger-gradient);
+            color: var(--text-white);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.5);
+        }
+
+        .btn-secondary {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-medium);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-tertiary);
+            border-color: var(--border-dark);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .btn-icon {
+            padding: var(--spacing-sm);
+            border-radius: var(--radius-full);
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ==================== 输入框样式 ==================== */
+        .input {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            transition: all var(--transition-base);
+            background: var(--bg-card);
+            font-family: var(--font-family);
+        }
+
+        .input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        .input::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            transition: all var(--transition-base);
+            font-family: var(--font-family);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        textarea.form-control {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* ==================== 网格布局 ==================== */
+        .grid {
+            display: grid;
+            gap: var(--spacing-md);
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(2, 1fr);
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .grid-5 {
+            grid-template-columns: repeat(5, 1fr);
+        }
+
+        /* 主内容区 + 侧边栏 */
+        .grid-sidebar-left {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: var(--spacing-lg);
+        }
+
+        .grid-sidebar-right {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: var(--spacing-lg);
+        }
+
+        @media (max-width: 1200px) {
+            .grid-sidebar-left,
+            .grid-sidebar-right {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .grid-2, .grid-3, .grid-4, .grid-5 {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar-menu {
+                display: none;
+            }
+
+            .container {
+                padding: 0 var(--spacing-md);
+            }
+        }
+
+        /* ==================== 统计卡片 ==================== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            margin-top: var(--spacing-lg);
+        }
+
+        .stat-card {
+            background: var(--primary-gradient);
+            color: var(--text-white);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-base);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-card.success {
+            background: var(--success-gradient);
+        }
+
+        .stat-card.warning {
+            background: var(--warning-gradient);
+        }
+
+        .stat-card.danger {
+            background: var(--danger-gradient);
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.95;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            position: relative;
+        }
+
+        /* ==================== 弹幕容器 ==================== */
+        .danmaku-container {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md);
+            height: 500px;
+            overflow-y: auto;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border-light);
+            position: relative;
+        }
+
+        .danmaku-container::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .danmaku-container::-webkit-scrollbar-track {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-full);
+        }
+
+        .danmaku-container::-webkit-scrollbar-thumb {
+            background: var(--border-medium);
+            border-radius: var(--radius-full);
+        }
+
+        .danmaku-container::-webkit-scrollbar-thumb:hover {
+            background: var(--border-dark);
+        }
+
+        /* ==================== 弹幕条目 ==================== */
+        .danmaku-item {
+            padding: var(--spacing-sm) var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            border-radius: var(--radius-md);
+            background: var(--bg-secondary);
+            border-left: 3px solid var(--primary-color);
+            transition: all var(--transition-base);
+            animation: slideInLeft 0.3s ease;
+            position: relative;
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .danmaku-item:hover {
+            transform: translateX(3px);
+            box-shadow: var(--shadow-sm);
+            background: var(--bg-card);
+        }
+
+        .danmaku-item.gift {
+            border-left-color: #ffd700;
+            background: linear-gradient(to right, #fffbeb, #fef3c7);
+        }
+
+        .danmaku-item.superchat {
+            border-left-color: var(--danger-color);
+            background: linear-gradient(to right, #fef2f2, #fee2e2);
+        }
+
+        .danmaku-item.guard {
+            border-left-color: #9b59b6;
+            background: linear-gradient(to right, #faf5ff, #f3e8ff);
+        }
+
+        .danmaku-item.ai-reply {
+            border-left-color: var(--success-color);
+            background: linear-gradient(to right, #ecfdf5, #d1fae5);
+        }
+
+        .danmaku-item.ai-reply .danmaku-content {
+            font-weight: 600;
+            color: #059669;
+        }
+
+        .danmaku-item.interact {
+            border-left-color: var(--info-color);
+            background: linear-gradient(to right, #eff6ff, #dbeafe);
+        }
+
+        .danmaku-item.follow {
+            border-left-color: #ef4444;
+            background: linear-gradient(to right, #fef2f2, #fee2e2);
+        }
+
+        .danmaku-item.filtered {
+            opacity: 0.6;
+            border-left-color: #f59e0b;
+            background: linear-gradient(to right, #fffbeb, #fef3c7);
+        }
+
+        .filter-reason, .filter-mark {
+            color: #f59e0b;
+            font-size: 0.85rem;
+            font-style: italic;
+        }
+
+        .danmaku-header {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .danmaku-user {
+            font-weight: 600;
+            color: var(--primary-color);
+            font-size: 0.85rem;
+        }
+
+        .danmaku-time {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            margin-left: auto;
+            font-weight: 500;
+        }
+
+        .danmaku-content {
+            color: var(--text-primary);
+            word-wrap: break-word;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .medal {
+            display: inline-block;
+            padding: 1px var(--spacing-xs);
+            border-radius: var(--radius-sm);
+            font-size: 0.7rem;
+            font-weight: 600;
+            background: var(--warning-gradient);
+            color: var(--text-white);
+        }
+
+        /* ==================== Toast 提示 ==================== */
+        .toast-container {
+            position: fixed;
+            top: 100px;
+            right: var(--spacing-xl);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .toast {
+            background: var(--bg-card);
+            padding: var(--spacing-lg) var(--spacing-xl);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-xl);
+            min-width: 320px;
+            animation: slideInRight 0.3s ease;
+            border-left: 4px solid var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .toast.success {
+            border-left-color: var(--success-color);
+        }
+
+        .toast.error {
+            border-left-color: var(--danger-color);
+        }
+
+        .toast.warning {
+            border-left-color: var(--warning-color);
+        }
+
+        .toast-icon {
+            font-size: 1.5rem;
+        }
+
+        .toast-message {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        /* ==================== 加载动画 ==================== */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ==================== 页面切换 ==================== */
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ==================== 模态框 ==================== */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-card);
+            padding: var(--spacing-2xl);
+            border-radius: var(--radius-2xl);
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-xl);
+            animation: scaleIn 0.3s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: var(--text-tertiary);
+            width: 40px;
+            height: 40px;
+            border-radius: var(--radius-full);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition-base);
+        }
+
+        .modal-close:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: var(--spacing-md) var(--spacing-lg);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-lg);
+            font-size: 1rem;
+            transition: all var(--transition-base);
+            font-family: var(--font-family);
+        }
+
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+            outline: none;
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        /* ==================== 插件卡片 ==================== */
+        .plugin-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition-base);
+            border: 1px solid var(--border-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .plugin-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+        }
+
+        .plugin-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .plugin-card.disabled::before {
+            background: var(--border-light);
+        }
+
+        .plugin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .plugin-info {
+            flex: 1;
+        }
+
+        .plugin-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-xs);
+        }
+
+        .plugin-version {
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .plugin-description {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-md);
+            line-height: 1.5;
+            font-size: 0.9rem;
+        }
+
+        .plugin-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: var(--spacing-md);
+            border-top: 1px solid var(--border-light);
+        }
+
+        .plugin-author {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            font-weight: 500;
+        }
+
+        /* ==================== 开关 ==================== */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 56px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--border-dark);
+            transition: var(--transition-base);
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: var(--transition-base);
+            border-radius: 50%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        input:checked + .slider {
+            background: var(--success-gradient);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(28px);
+        }
+
+        /* ==================== 状态徽章 ==================== */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-sm) var(--spacing-lg);
+            border-radius: var(--radius-full);
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .status-badge.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success-color);
+        }
+
+        .status-badge.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-color);
+        }
+
+        .status-badge.danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger-color);
+        }
+
+        .status-badge.info {
+            background: rgba(59, 130, 246, 0.1);
+            color: var(--info-color);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .status-badge.success .status-dot {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* ==================== 底部状态栏 ==================== */
+        .status-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--border-light);
+            padding: var(--spacing-md) var(--spacing-xl);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+            z-index: 1000;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* ==================== 响应式调整 ==================== */
+        @media (max-width: 768px) {
+            .stat-value {
+                font-size: 2rem;
+            }
+
+            .card {
+                padding: var(--spacing-lg);
+            }
+
+            .btn {
+                padding: var(--spacing-sm) var(--spacing-md);
+                font-size: 0.875rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部导航栏 -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-logo">
+                <div class="navbar-logo-icon">📺</div>
+                <span>B站直播弹幕工具</span>
+            </div>
+            <ul class="navbar-menu">
+                <li class="navbar-menu-item active" data-page="monitor">弹幕监控</li>
+                <li class="navbar-menu-item" data-page="analytics">用户分析</li>
+                <li class="navbar-menu-item" data-page="login">登录设置</li>
+                <li class="navbar-menu-item" data-page="plugins">插件管理</li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 主容器 -->
+    <div class="container">
+        <!-- 弹幕监控页面 -->
+        <div class="page active" id="page-monitor">
+            <!-- 登录状态和直播间信息 -->
+            <div class="grid grid-2" style="margin-top: var(--spacing-lg);">
+                <!-- 登录状态 -->
+                <div class="card">
+                    <div class="card-title">
+                        <div class="card-title-icon">🔐</div>
+                        账户信息
+                    </div>
+                    <div id="monitorLoginStatus">
+                        <p style="color: var(--text-secondary);">正在检查登录状态...</p>
+                    </div>
+                </div>
+
+                <!-- 直播间信息 -->
+                <div class="card">
+                    <div class="card-title">
+                        <div class="card-title-icon">📡</div>
+                        直播间信息
+                        <button class="btn btn-secondary btn-sm" id="refreshRoomInfoBtn" style="margin-left: auto; display: none;" onclick="refreshRoomInfo()">
+                            🔄 刷新
+                        </button>
+                    </div>
+                    <div id="roomInfo">
+                        <div class="status-badge warning">
+                            <span class="status-dot"></span>
+                            未连接直播间
+                        </div>
+                        <div id="roomInfoDetails" style="display: none; margin-top: var(--spacing-md);">
+                            <!-- 核心数据卡片 -->
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+                                <!-- 主播信息 -->
+                                <div style="padding: var(--spacing-md); background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: var(--radius-lg); color: white; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);">
+                                    <div style="font-size: 0.8em; opacity: 0.9; margin-bottom: var(--spacing-xs);">👤 主播</div>
+                                    <div style="font-size: 1.4em; font-weight: 700; margin-bottom: var(--spacing-xs); line-height: 1.2; min-height: 1.8em;" id="anchorName">加载中...</div>
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-sm); font-size: 0.85em; opacity: 0.95;">
+                                        <span id="anchorLevel" style="background: rgba(255,255,255,0.2); padding: 2px 8px; border-radius: 12px;"></span>
+                                        <span style="opacity: 0.7;">•</span>
+                                        <span style="font-size: 0.9em;">UID: <span id="anchorUid">-</span></span>
+                                    </div>
+                                </div>
+                                
+                                <!-- 在线人数 -->
+                                <div style="padding: var(--spacing-md); background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); border-radius: var(--radius-lg); color: white; box-shadow: 0 4px 12px rgba(240, 147, 251, 0.3);">
+                                    <div style="font-size: 0.8em; opacity: 0.9; margin-bottom: var(--spacing-xs);">👥 在线人气</div>
+                                    <div style="font-size: 2.2em; font-weight: 700; line-height: 1.1; margin-bottom: var(--spacing-xs);" id="onlineCount">-</div>
+                                    <div style="font-size: 0.85em; opacity: 0.9;">实时观看</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 直播标题 -->
+                            <div style="margin-bottom: var(--spacing-md); padding: var(--spacing-md); background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); border-radius: var(--radius-lg); color: white; box-shadow: 0 4px 12px rgba(79, 172, 254, 0.3);">
+                                <div style="font-size: 0.8em; opacity: 0.9; margin-bottom: var(--spacing-xs);">📺 直播标题</div>
+                                <div style="font-weight: 600; font-size: 1.15em; line-height: 1.4;" id="roomTitle">加载中...</div>
+                            </div>
+                            
+                            <!-- 详细信息网格 -->
+                            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--spacing-sm); margin-bottom: var(--spacing-md);">
+                                <div style="padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                                    <div style="font-size: 0.75em; color: var(--text-secondary); margin-bottom: 4px;">🏠 房间号</div>
+                                    <div style="font-weight: 600; font-size: 0.95em;" id="currentRoom">-</div>
+                                </div>
+                                <div style="padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                                    <div style="font-size: 0.75em; color: var(--text-secondary); margin-bottom: 4px;">🎬 状态</div>
+                                    <div style="font-weight: 600; font-size: 0.95em;" id="liveStatus">-</div>
+                                </div>
+                                <div style="padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                                    <div style="font-size: 0.75em; color: var(--text-secondary); margin-bottom: 4px;">⏱️ 时长</div>
+                                    <div style="font-weight: 600; font-size: 0.95em;" id="liveDuration">-</div>
+                                </div>
+                                <div style="padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                                    <div style="font-size: 0.75em; color: var(--text-secondary); margin-bottom: 4px;">🏷️ 分区</div>
+                                    <div style="font-weight: 600; font-size: 0.95em;" id="roomArea">-</div>
+                                </div>
+                            </div>
+                            
+                            <!-- 统计数据 -->
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-sm);">
+                                <div style="text-align: center; padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                                    <div style="font-size: 1.3em; font-weight: 700; color: #f5576c; margin-bottom: 4px;" id="followerCount">-</div>
+                                    <div style="font-size: 0.75em; color: var(--text-secondary);">❤️ 关注</div>
+                                </div>
+                                <div style="text-align: center; padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                                    <div style="font-size: 1.3em; font-weight: 700; color: #667eea; margin-bottom: 4px;" id="userLevel">-</div>
+                                    <div style="font-size: 0.75em; color: var(--text-secondary);">🎖️ 等级</div>
+                                </div>
+                                <div style="text-align: center; padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md);">
+                                    <div style="font-size: 0.75em; color: var(--text-secondary); margin-bottom: 4px;">🏷️ 标签</div>
+                                    <div style="font-size: 0.85em; font-weight: 600; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" id="roomTags" title="">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 直播间输入 -->
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div style="display: flex; gap: var(--spacing-md); flex-wrap: wrap;">
+                    <input type="text" class="input" id="roomInput" placeholder="输入直播间号或URL (例如: 123456 或 https://live.bilibili.com/123456)" style="flex: 1; min-width: 300px;">
+                    <button class="btn btn-primary" id="connectBtn">
+                        <span>连接直播间</span>
+                    </button>
+                    <button class="btn btn-danger" id="disconnectBtn" style="display: none;">
+                        <span>断开连接</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 统计卡片 -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statOnline">0</div>
+                    <div class="stat-label">在线人数</div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-value" id="statDanmaku">0</div>
+                    <div class="stat-label">弹幕总数</div>
+                </div>
+                <div class="stat-card warning">
+                    <div class="stat-value" id="statSpeed">0</div>
+                    <div class="stat-label">弹幕速度 (条/分)</div>
+                </div>
+                <div class="stat-card danger">
+                    <div class="stat-value" id="statGift">¥0</div>
+                    <div class="stat-label">礼物总价值 <span id="statGiftCount" style="font-size: 0.75rem; color: var(--text-muted);">(0)</span></div>
+                </div>
+            </div>
+
+            <!-- 主要内容区域 -->
+            <div class="grid grid-sidebar-left" style="margin-top: var(--spacing-lg);">
+                <!-- 弹幕显示区域 -->
+                <div class="card">
+                    <div class="card-title">
+                        <div class="card-title-icon">💬</div>
+                        实时弹幕
+                    </div>
+                    <div class="danmaku-container" id="danmakuContainer">
+                        <div style="text-align: center; color: var(--text-secondary); padding: 3rem;">
+                            <p style="font-size: 1.1rem; margin-bottom: var(--spacing-md);">📡 等待连接直播间...</p>
+                            <p>连接后实时显示弹幕</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 侧边栏 -->
+                <div style="display: flex; flex-direction: column; gap: var(--spacing-md);">
+                    <!-- 爆点监测 -->
+                    <div class="card">
+                        <div class="card-title">
+                            <div class="card-title-icon">🔥</div>
+                            爆点监测
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="color: var(--text-secondary); font-size: 0.85rem;">弹幕速度</span>
+                                <span style="font-weight: 600; color: var(--primary-color);" id="hotspotDanmakuSpeed">0 条/分</span>
+                            </div>
+                            <div style="height: 4px; background: var(--bg-secondary); border-radius: var(--radius-full); overflow: hidden;">
+                                <div id="hotspotDanmakuBar" style="height: 100%; background: var(--primary-gradient); width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--spacing-sm);">
+                                <span style="color: var(--text-secondary); font-size: 0.85rem;">礼物价值</span>
+                                <span style="font-weight: 600; color: var(--success-color);" id="hotspotGiftValue">¥0</span>
+                            </div>
+                            <div style="height: 4px; background: var(--bg-secondary); border-radius: var(--radius-full); overflow: hidden;">
+                                <div id="hotspotGiftBar" style="height: 100%; background: var(--success-gradient); width: 0%; transition: width 0.3s;"></div>
+                            </div>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: var(--spacing-sm);">
+                                <span style="color: var(--text-secondary); font-size: 0.85rem;">SC数量</span>
+                                <span style="font-weight: 600; color: var(--warning-color);" id="hotspotScCount">0 个</span>
+                            </div>
+                            
+                            <div id="hotspotStatus" style="margin-top: var(--spacing-sm); padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md); text-align: center; font-size: 0.85rem; color: var(--text-tertiary);">
+                                等待数据...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 实时活动 -->
+                    <div class="card">
+                        <div class="card-title">
+                            <div class="card-title-icon">📊</div>
+                            实时活动
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--info-color);" id="activityGifts">0</div>
+                                <div style="color: var(--text-tertiary); font-size: 0.75rem;">礼物数</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger-color);" id="activityScs">0</div>
+                                <div style="color: var(--text-tertiary); font-size: 0.75rem;">SC数</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary-color);" id="activityGuards">0</div>
+                                <div style="color: var(--text-tertiary); font-size: 0.75rem;">上舰数</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 1.5rem; font-weight: 700; color: var(--success-color);" id="activityFollows">0</div>
+                                <div style="color: var(--text-tertiary); font-size: 0.75rem;">关注数</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- AI助手面板 -->
+                    <div class="card">
+                        <div class="card-title">
+                            <div class="card-title-icon">🤖</div>
+                            AI助手
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-sm);">
+                            <div>
+                                <label class="form-label">API密钥</label>
+                                <input type="text" class="form-control" id="aiApiKey" placeholder="输入Moonshot API Key">
+                            </div>
+                            <div>
+                                <label class="form-label">模型</label>
+                                <select class="form-control" id="aiModel">
+                                    <option value="moonshot-v1-8k">moonshot-v1-8k</option>
+                                    <option value="moonshot-v1-32k">moonshot-v1-32k</option>
+                                    <option value="moonshot-v1-128k">moonshot-v1-128k</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="form-label">回复概率</label>
+                                <input type="range" class="form-control" id="aiReplyProbability" min="0" max="1" step="0.05" value="0.1">
+                                <small style="color: var(--text-tertiary);">当前值: <span id="probabilityValue">0.1</span></small>
+                            </div>
+                            <div>
+                                <label class="form-label">创造性</label>
+                                <input type="range" class="form-control" id="aiTemperature" min="0" max="1" step="0.1" value="0.7">
+                                <small style="color: var(--text-tertiary);">当前值: <span id="temperatureValue">0.7</span></small>
+                            </div>
+                            <button class="btn btn-primary" id="saveAiConfig" style="width: 100%;">保存配置</button>
+                        </div>
+                    </div>
+
+                    <!-- 快捷操作 -->
+                    <div class="card">
+                        <div class="card-title">
+                            <div class="card-title-icon">⚡</div>
+                            快捷操作
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: var(--spacing-xs);">
+                            <button class="btn btn-secondary" id="clearDanmaku">清空弹幕</button>
+                            <button class="btn btn-secondary" id="exportDanmaku">导出弹幕</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 用户分析页面 -->
+        <div class="page" id="page-analytics">
+            <!-- 全局统计 -->
+            <div class="card" style="margin-bottom: var(--spacing-lg);">
+                <div class="card-title">
+                    <div class="card-title-icon">📊</div>
+                    全局统计
+                </div>
+                <div class="grid grid-4">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--primary-color);" id="analyticsTotalUsers">0</div>
+                        <div style="color: var(--text-secondary);">活跃用户</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--success-color);" id="analyticsTotalMessages">0</div>
+                        <div style="color: var(--text-secondary);">总消息数</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--warning-color);" id="analyticsTodayUsers">0</div>
+                        <div style="color: var(--text-secondary);">今日活跃</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--danger-color);" id="analyticsTopInterest">-</div>
+                        <div style="color: var(--text-secondary);">热门话题</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户搜索 -->
+            <div class="card" style="margin-bottom: var(--spacing-lg);">
+                <div class="card-title">
+                    <div class="card-title-icon">🔍</div>
+                    用户搜索
+                </div>
+                <div style="display: flex; gap: var(--spacing-md);">
+                    <input type="text" class="input" id="userSearchInput" placeholder="输入用户名搜索...">
+                    <button class="btn btn-primary" id="searchUserBtn">搜索</button>
+                </div>
+            </div>
+
+            <!-- 用户画像 -->
+            <div class="card" id="userProfileCard" style="display: none;">
+                <div class="card-title">
+                    <div class="card-title-icon">👤</div>
+                    用户画像
+                </div>
+                <div id="userProfileContent"></div>
+            </div>
+
+            <!-- 用户记忆 -->
+            <div class="card" id="userMemoryCard" style="display: none;">
+                <div class="card-title">
+                    <div class="card-title-icon">🧠</div>
+                    用户记忆
+                </div>
+                <div id="userMemoryContent"></div>
+            </div>
+
+            <!-- 兴趣搜索 -->
+            <div class="card" style="margin-top: var(--spacing-lg);">
+                <div class="card-title">
+                    <div class="card-title-icon">🎯</div>
+                    兴趣搜索
+                </div>
+                <div style="display: flex; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+                    <input type="text" class="input" id="interestSearchInput" placeholder="输入兴趣关键词...">
+                    <button class="btn btn-primary" id="searchInterestBtn">搜索</button>
+                </div>
+                <div id="interestSearchResults"></div>
+            </div>
+        </div>
+
+        <!-- 登录设置页面 -->
+        <div class="page" id="page-login">
+            <div class="card">
+                <div class="card-title">
+                    <div class="card-title-icon">🔑</div>
+                    登录设置
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-xl);">
+                    <div>
+                        <h3 style="margin-bottom: var(--spacing-lg);">扫码登录</h3>
+                        <div id="qrcodeArea" style="text-align: center; padding: var(--spacing-xl); background: var(--bg-secondary); border-radius: var(--radius-xl);">
+                            <div id="qrcodeImage" style="width: 200px; height: 200px; margin: var(--spacing-md) auto; display: flex; align-items: center; justify-content: center; background: white; border-radius: var(--radius-lg); border: 2px solid var(--border-light);">
+                                <span style="color: var(--text-tertiary);">点击生成二维码</span>
+                            </div>
+                            <button class="btn btn-primary" id="generateQrcode" style="margin-top: var(--spacing-md);">生成二维码</button>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: var(--spacing-lg);">登录状态</h3>
+                        <div id="loginStatusArea">
+                            <p style="color: var(--text-secondary);">点击上方按钮登录</p>
+                        </div>
+                        <div style="margin-top: var(--spacing-xl);">
+                            <button class="btn btn-danger" id="logoutBtn" style="display: none;">退出登录</button>
+                            <button class="btn btn-secondary" id="anonymousBtn">使用匿名模式</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 插件管理页面 -->
+        <div class="page" id="page-plugins">
+            <div class="card">
+                <div class="card-title">
+                    <div class="card-title-icon">🔌</div>
+                    插件管理
+                </div>
+                <div class="grid grid-3" id="pluginList">
+                    <p style="color: var(--text-secondary);">正在加载插件...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 底部状态栏 -->
+    <div class="status-bar">
+        <div class="status-item">
+            <span class="status-dot" id="connectionDot"></span>
+            <span id="connectionStatus">未连接</span>
+        </div>
+        <div class="status-item">
+            <span>📊</span>
+            <span id="roomStatus">未连接直播间</span>
+        </div>
+        <div class="status-item">
+            <span>⏱️</span>
+            <span id="uptime">运行时间: 00:00:00</span>
+        </div>
+    </div>
+
+    <!-- 模态框容器 -->
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">插件配置</div>
+                <div class="modal-close" id="modalClose">✕</div>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 动态内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== WebSocket 连接 ====================
+        let ws = null;
+        let isConnected = false;
+        let danmakuCount = 0;
+        let startTime = Date.now();
+        let currentRoomId = null;
+        let reconnectTimer = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const reconnectInterval = 3000;
+        
+        // 页面可见性状态
+        let isPageVisible = true;
+        
+        // 存储连接状态到sessionStorage
+        function saveConnectionState() {
+            if (isConnected && currentRoomId) {
+                sessionStorage.setItem('ws_room_id', currentRoomId);
+                sessionStorage.setItem('ws_was_connected', 'true');
+                sessionStorage.setItem('ws_last_activity', Date.now().toString());
+            }
+        }
+        
+        // 从sessionStorage恢复连接状态
+        function restoreConnectionState() {
+            const savedRoomId = sessionStorage.getItem('ws_room_id');
+            const wasConnected = sessionStorage.getItem('ws_was_connected') === 'true';
+            const lastActivity = parseInt(sessionStorage.getItem('ws_last_activity') || '0');
+            
+            // 如果5分钟内有过连接，自动重连
+            if (savedRoomId && wasConnected && (Date.now() - lastActivity < 300000)) {
+                console.log('[WebSocket] 恢复连接状态，房间ID:', savedRoomId);
+                return parseInt(savedRoomId);
+            }
+            return null;
+        }
+        
+        // 清理连接状态
+        function clearConnectionState() {
+            sessionStorage.removeItem('ws_room_id');
+            sessionStorage.removeItem('ws_was_connected');
+            sessionStorage.removeItem('ws_last_activity');
+        }
+
+        // ==================== 工具函数 ====================
+        
+        // 获取并显示直播间详细信息
+        async function loadRoomInfo(roomId) {
+            console.log('[直播间信息] 开始加载房间信息，房间号:', roomId);
+            
+            try {
+                const response = await fetch(`/api/room/info/${roomId}`);
+                const data = await response.json();
+                
+                console.log('[直播间信息] API响应:', data);
+                
+                if (data.success) {
+                    const roomData = data.data;
+                    console.log('[直播间信息] 房间数据:', roomData);
+                    
+                    // 显示详细信息区域
+                    const detailsDiv = document.getElementById('roomInfoDetails');
+                    const refreshBtn = document.getElementById('refreshRoomInfoBtn');
+                    
+                    console.log('[直播间信息] 详细信息区域元素:', detailsDiv);
+                    console.log('[直播间信息] 刷新按钮元素:', refreshBtn);
+                    
+                    if (detailsDiv) {
+                        detailsDiv.style.display = 'block';
+                        console.log('[直播间信息] 已显示详细信息区域');
+                    } else {
+                        console.error('[直播间信息] 找不到详细信息区域元素！');
+                    }
+                    
+                    if (refreshBtn) {
+                        refreshBtn.style.display = 'inline-flex';
+                    }
+                    
+                    // 更新主播信息
+                    const anchorName = document.getElementById('anchorName');
+                    const anchorLevel = document.getElementById('anchorLevel');
+                    const anchorUid = document.getElementById('anchorUid');
+                    const userLevel = document.getElementById('userLevel');
+                    
+                    // 主播UID（先设置，因为一定有）
+                    const uid = roomData.anchor?.uid || roomData.uid || 0;
+                    if (anchorUid) {
+                        anchorUid.textContent = uid || '-';
+                        console.log('[直播间信息] 主播UID:', uid);
+                    }
+                    
+                    // 主播名称：直接使用后端返回的数据
+                    let displayName = '未知主播';
+                    if (roomData.anchor && roomData.anchor.uname) {
+                        displayName = roomData.anchor.uname;
+                        console.log('[直播间信息] 主播名:', displayName);
+                    } else {
+                        console.warn('[直播间信息] 后端未返回主播名，UID:', uid);
+                        displayName = uid ? `主播${uid}` : '未知主播';
+                    }
+                    
+                    if (anchorName) {
+                        anchorName.textContent = displayName;
+                        console.log('[直播间信息] 已更新主播名称显示:', displayName);
+                    }
+                    
+                    // 主播等级
+                    const anchorLevelValue = roomData.anchor?.level || 0;
+                    if (anchorLevel) {
+                        anchorLevel.textContent = anchorLevelValue ? `Lv${anchorLevelValue}` : '';
+                        console.log('[直播间信息] 主播等级:', anchorLevelValue);
+                    }
+                    
+                    // 用户等级（显示在统计区）
+                    if (userLevel) {
+                        userLevel.textContent = anchorLevelValue ? `Lv${anchorLevelValue}` : '-';
+                        console.log('[直播间信息] 统计区等级:', anchorLevelValue);
+                    }
+                    
+                    // 更新房间基本信息
+                    const currentRoom = document.getElementById('currentRoom');
+                    const roomTitle = document.getElementById('roomTitle');
+                    
+                    if (currentRoom) {
+                        currentRoom.textContent = roomData.room_id || roomId;
+                        console.log('[直播间信息] 房间号:', roomData.room_id);
+                    }
+                    
+                    if (roomTitle) {
+                        roomTitle.textContent = roomData.title || '未设置标题';
+                        console.log('[直播间信息] 直播标题:', roomData.title);
+                    }
+                    
+                    // 更新直播状态
+                    const liveStatus = document.getElementById('liveStatus');
+                    const liveDuration = document.getElementById('liveDuration');
+                    
+                    if (liveStatus) {
+                        const statusMap = {
+                            0: '❌ 未开播',
+                            1: '🔴 直播中',
+                            2: '🔄 轮播中'
+                        };
+                        liveStatus.innerHTML = statusMap[roomData.live_status] || '未知';
+                        console.log('[直播间信息] 直播状态:', roomData.live_status);
+                    }
+                    
+                    if (liveDuration) {
+                        liveDuration.textContent = roomData.live_duration_formatted || '未开播';
+                        console.log('[直播间信息] 直播时长:', roomData.live_duration_formatted);
+                    }
+                    
+                    // 更新在线人数
+                    const onlineCount = document.getElementById('onlineCount');
+                    if (onlineCount) {
+                        const online = roomData.online || 0;
+                        console.log('[直播间信息] 在线人数原始值:', online);
+                        if (online > 10000) {
+                            onlineCount.textContent = `${(online / 10000).toFixed(1)}万`;
+                        } else {
+                            onlineCount.textContent = online.toLocaleString();
+                        }
+                        console.log('[直播间信息] 在线人数显示:', onlineCount.textContent);
+                    }
+                    
+                    // 更新分区
+                    const roomArea = document.getElementById('roomArea');
+                    if (roomArea) {
+                        const area = roomData.parent_area_name && roomData.area_name 
+                            ? `${roomData.parent_area_name} > ${roomData.area_name}`
+                            : (roomData.area_name || '未知');
+                        roomArea.textContent = area;
+                        console.log('[直播间信息] 分区:', area);
+                    }
+                    
+                    // 更新关注数
+                    const followerCount = document.getElementById('followerCount');
+                    if (followerCount) {
+                        const followers = roomData.anchor?.follower_num || roomData.attention || 0;
+                        console.log('[直播间信息] 关注数原始值:', followers);
+                        if (followers > 10000) {
+                            followerCount.textContent = `${(followers / 10000).toFixed(1)}万`;
+                        } else {
+                            followerCount.textContent = followers.toLocaleString();
+                        }
+                        console.log('[直播间信息] 关注数显示:', followerCount.textContent);
+                    }
+                    
+                    // 更新标签
+                    const roomTags = document.getElementById('roomTags');
+                    if (roomTags) {
+                        const tags = roomData.tags || '无';
+                        roomTags.textContent = tags;
+                        roomTags.title = tags;  // 添加title以便鼠标悬停查看完整内容
+                        console.log('[直播间信息] 标签:', tags);
+                    }
+                    
+                    console.log('[直播间信息] ✅ 所有信息加载完成');
+                } else {
+                    console.error('[直播间信息] ❌ API返回失败:', data.message);
+                    showToast('获取直播间信息失败: ' + data.message, 'error');
+                }
+            } catch (error) {
+                console.error('[直播间信息] ❌ 加载错误:', error);
+                showToast('获取直播间信息出错', 'error');
+            }
+        }
+        
+        // 刷新直播间信息
+        async function refreshRoomInfo() {
+            if (currentRoomId) {
+                await loadRoomInfo(currentRoomId);
+                showToast('直播间信息已刷新', 'success');
+            }
+        }
+        
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            const icons = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+
+            toast.innerHTML = `
+                <span class="toast-icon">${icons[type]}</span>
+                <span class="toast-message">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100px)';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('zh-CN', { hour12: false });
+        }
+
+        function formatUptime() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const hours = Math.floor(elapsed / 3600);
+            const minutes = Math.floor((elapsed % 3600) / 60);
+            const seconds = elapsed % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        // ==================== 页面切换 ====================
+        document.querySelectorAll('.navbar-menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                document.querySelectorAll('.navbar-menu-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+
+                const pageId = `page-${item.dataset.page}`;
+                document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+                document.getElementById(pageId).classList.add('active');
+            });
+        });
+
+        // ==================== 直播间连接 ====================
+        document.getElementById('connectBtn').addEventListener('click', async () => {
+            const roomInput = document.getElementById('roomInput');
+            const roomValue = roomInput ? roomInput.value.trim() : '';
+            if (!roomValue) {
+                showToast('请输入直播间号或URL', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/room/parse?url=${encodeURIComponent(roomValue)}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    connectToRoom(data.room_id);
+                } else {
+                    showToast(data.message || '解析直播间失败', 'error');
+                }
+            } catch (error) {
+                showToast('网络错误，请重试', 'error');
+            }
+        });
+
+        document.getElementById('disconnectBtn').addEventListener('click', () => {
+            if (ws) {
+                ws.send(JSON.stringify({ action: 'disconnect' }));
+            }
+        });
+
+        function connectToRoom(roomId) {
+            console.log(`[WebSocket] 开始连接房间: ${roomId}`);
+            
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                console.log('[WebSocket] 已连接，无需重复连接');
+                return;
+            }
+            
+            if (ws) {
+                console.log('[WebSocket] 关闭现有连接');
+                ws.close();
+            }
+
+            showToast('正在连接直播间...', 'info');
+            currentRoomId = roomId;
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            ws = new WebSocket(`${protocol}//${window.location.host}/ws/danmaku`);
+            
+            console.log(`[WebSocket] 创建连接: ${protocol}//${window.location.host}/ws/danmaku`);
+
+            ws.onopen = () => {
+                console.log('[WebSocket] 连接已建立，发送连接请求');
+                ws.send(JSON.stringify({
+                    action: 'connect',
+                    room_id: roomId
+                }));
+            };
+
+            ws.onmessage = (event) => {
+                console.log('[WebSocket] 收到原始数据:', event.data);
+                const data = JSON.parse(event.data);
+                console.log('[WebSocket] 解析后数据:', data);
+                handleWebSocketMessage(data);
+            };
+
+            ws.onclose = (event) => {
+                isConnected = false;
+                updateConnectionStatus(false);
+                
+                console.log('[WebSocket] 连接关闭:', event.code, event.reason);
+                
+                // 只有在页面可见且不是主动关闭时才重连
+                if (isPageVisible && event.code !== 1000) {
+                    attemptReconnect();
+                }
+            };
+
+            ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                showToast('连接错误', 'error');
+            };
+        }
+
+        function attemptReconnect() {
+            if (reconnectAttempts >= maxReconnectAttempts) {
+                console.log('[WebSocket] 达到最大重连次数，停止重连');
+                showToast('连接失败，请刷新页面', 'error');
+                clearConnectionState();
+                return;
+            }
+            
+            reconnectAttempts++;
+            console.log(`[WebSocket] 尝试重连 (${reconnectAttempts}/${maxReconnectAttempts})`);
+            
+            reconnectTimer = setTimeout(() => {
+                if (currentRoomId && isPageVisible) {
+                    connectToRoom(currentRoomId);
+                }
+            }, reconnectInterval);
+        }
+        
+        function handleWebSocketMessage(data) {
+            console.log('[WebSocket] 收到消息:', data);  // 调试日志
+            console.log('[WebSocket] 消息类型:', data.type);  // 调试日志
+            
+            switch (data.type) {
+                case 'connected':
+                    console.log('[WebSocket] 处理连接成功');
+                    isConnected = true;
+                    reconnectAttempts = 0; // 重置重连计数
+                    updateConnectionStatus(true);
+                    const currentRoom = document.getElementById('currentRoom');
+                    if (currentRoom) {
+                        currentRoom.textContent = data.room_id || roomId || '未知';
+                    }
+                    saveConnectionState(); // 保存连接状态
+                    showToast('连接成功', 'success');
+                    break;
+
+                case 'disconnected':
+                    console.log('[WebSocket] 处理断开连接');
+                    isConnected = false;
+                    updateConnectionStatus(false);
+                    showToast('已断开连接', 'info');
+                    break;
+
+                case 'error':
+                    console.log('[WebSocket] 处理错误');
+                    showToast(data.message || '连接错误', 'error');
+                    break;
+
+                case 'danmaku':
+                case 'gift':
+                case 'superchat':
+                case 'guard':
+                case 'interact':
+                case 'follow':
+                    console.log('[WebSocket] 处理弹幕事件:', data.type);
+                    // 如果收到弹幕消息但状态显示未连接，自动更新为已连接
+                    if (!isConnected) {
+                        console.log('[WebSocket] 检测到弹幕但状态为未连接，自动更新为已连接');
+                        isConnected = true;
+                        updateConnectionStatus(true);
+                    }
+                    addDanmaku(data);
+                    break;
+
+                case 'online':
+                    console.log('[WebSocket] 处理在线人数更新');
+                    const online = data.data ? data.data.online : 0;
+                    console.log('[WebSocket] 在线人数更新:', online, '来源:', data.data ? data.data.source : '未知');
+                    
+                    // 更新统计卡片中的在线人数
+                    const statOnline = document.getElementById('statOnline');
+                    if (statOnline) {
+                        statOnline.textContent = online;
+                    }
+                    
+                    // 更新直播间信息卡片中的在线人气
+                    const onlineCount = document.getElementById('onlineCount');
+                    if (onlineCount) {
+                        console.log('[直播间信息] 在线人数原始值:', online);
+                        if (online > 10000) {
+                            onlineCount.textContent = `${(online / 10000).toFixed(1)}万`;
+                        } else {
+                            onlineCount.textContent = online.toLocaleString();
+                        }
+                        console.log('[直播间信息] 在线人数显示:', onlineCount.textContent);
+                    }
+                    break;
+
+                case 'hotspot_stats':
+                    console.log('[WebSocket] 处理爆点统计');
+                    updateHotspotStats(data.data);
+                    break;
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            console.log('[状态更新] 更新连接状态:', connected);
+            const dot = document.getElementById('connectionDot');
+            const status = document.getElementById('connectionStatus');
+            const roomStatus = document.getElementById('roomStatus');
+            const roomInfo = document.getElementById('roomInfo');
+            const danmakuContainer = document.getElementById('danmakuContainer');
+
+            console.log('[状态更新] 获取到的元素:', { dot, status, roomStatus, roomInfo, danmakuContainer });
+            
+            if (connected) {
+                console.log('[状态更新] 设置为已连接状态');
+                if (dot) dot.classList.add('connected');
+                if (status) status.textContent = '已连接';
+                if (roomStatus) roomStatus.textContent = '已连接直播间';
+                
+                // 更新直播间信息区域
+                if (roomInfo) {
+                    const statusBadge = roomInfo.querySelector('.status-badge');
+                    
+                    if (statusBadge) {
+                        statusBadge.classList.remove('warning');
+                        statusBadge.classList.add('success');
+                        statusBadge.innerHTML = '<span class="status-dot"></span>已连接直播间';
+                    }
+                }
+                
+                // 加载直播间详细信息
+                if (currentRoomId) {
+                    loadRoomInfo(currentRoomId);
+                }
+                
+                // 清除弹幕容器的占位内容
+                if (danmakuContainer && danmakuContainer.children.length === 1) {
+                    const placeholder = danmakuContainer.querySelector('div[style*="text-align: center"]');
+                    if (placeholder) {
+                        danmakuContainer.innerHTML = '';
+                    }
+                }
+                
+                const connectBtn = document.getElementById('connectBtn');
+                const disconnectBtn = document.getElementById('disconnectBtn');
+                if (connectBtn) connectBtn.style.display = 'none';
+                if (disconnectBtn) disconnectBtn.style.display = 'inline-flex';
+            } else {
+                console.log('[状态更新] 设置为未连接状态');
+                if (dot) dot.classList.remove('connected');
+                if (status) status.textContent = '未连接';
+                if (roomStatus) roomStatus.textContent = '未连接直播间';
+                
+                // 更新直播间信息区域
+                if (roomInfo) {
+                    const statusBadge = roomInfo.querySelector('.status-badge');
+                    const detailsDiv = document.getElementById('roomInfoDetails');
+                    const refreshBtn = document.getElementById('refreshRoomInfoBtn');
+                    
+                    if (statusBadge) {
+                        statusBadge.classList.remove('success');
+                        statusBadge.classList.add('warning');
+                        statusBadge.innerHTML = '<span class="status-dot"></span>未连接直播间';
+                    }
+                    
+                    // 隐藏详细信息
+                    if (detailsDiv) detailsDiv.style.display = 'none';
+                    if (refreshBtn) refreshBtn.style.display = 'none';
+                }
+                
+                // 恢复弹幕容器的占位内容
+                if (danmakuContainer && danmakuContainer.children.length === 0) {
+                    danmakuContainer.innerHTML = `
+                        <div style="text-align: center; color: var(--text-secondary); padding: 3rem;">
+                            <p style="font-size: 1.1rem; margin-bottom: var(--spacing-md);">📡 等待连接直播间...</p>
+                            <p>连接后实时显示弹幕</p>
+                        </div>
+                    `;
+                }
+                
+                const connectBtn = document.getElementById('connectBtn');
+                const disconnectBtn = document.getElementById('disconnectBtn');
+                if (connectBtn) connectBtn.style.display = 'inline-flex';
+                if (disconnectBtn) disconnectBtn.style.display = 'none';
+            }
+        }
+
+        // ==================== 弹幕显示 ====================
+        // 活动统计
+        const activityStats = {
+            gifts: 0,
+            scs: 0,
+            guards: 0,
+            follows: 0,
+            giftValue: 0
+        };
+
+        function addDanmaku(data) {
+            console.log('[弹幕显示] 接收到的数据:', data);  // 调试日志
+            
+            const container = document.getElementById('danmakuContainer');
+            const danmaku = document.createElement('div');
+
+            let typeClass = '';
+            let icon = '';
+
+            // 更新活动统计
+            if (data.type === 'gift') {
+                activityStats.gifts++;
+                activityStats.giftValue += data.data.total_coin || 0;
+                updateActivityStats();
+            } else if (data.type === 'superchat') {
+                activityStats.scs++;
+                updateActivityStats();
+            } else if (data.type === 'guard') {
+                activityStats.guards++;
+                updateActivityStats();
+            } else if (data.type === 'follow') {
+                activityStats.follows++;
+                updateActivityStats();
+            }
+
+            switch (data.type) {
+                case 'danmaku':
+                    typeClass = '';
+                    icon = '💬';
+                    break;
+                case 'gift':
+                    typeClass = 'gift';
+                    icon = '🎁';
+                    break;
+                case 'superchat':
+                    typeClass = 'superchat';
+                    icon = '💰';
+                    break;
+                case 'guard':
+                    typeClass = 'guard';
+                    icon = '👑';
+                    break;
+                case 'interact':
+                    typeClass = 'interact';
+                    icon = '👋';
+                    break;
+                case 'follow':
+                    typeClass = 'follow';
+                    icon = '❤️';
+                    break;
+                default:
+                    typeClass = '';
+                    icon = '💬';
+            }
+
+            const userName = data.data.user?.uname || '未知用户';
+            let content = data.data.content || data.data.giftName || data.data.gift_name || (data.data.price ? `送出价值¥${data.data.price}的礼物` : '');
+            const time = data.data.timestamp ? formatTime(data.data.timestamp * 1000) : formatTime(Date.now());
+
+            // 检查是否被过滤
+            if (data.data.filtered) {
+                typeClass += ' filtered';
+                if (data.data.original_content) {
+                    // 如果有原始内容，显示替换后的内容和原因
+                    content = `${content} <span class="filter-reason">(${data.data.filter_reason || '已过滤'})</span>`;
+                } else {
+                    // 只是标记
+                    content = `${content} <span class="filter-mark">[已标记]</span>`;
+                }
+            }
+
+            console.log('[弹幕显示] 解析后的内容:', { userName, content, type: data.type, filtered: data.data.filtered });  // 调试日志
+
+            danmaku.className = `danmaku-item ${typeClass}`;
+            danmaku.innerHTML = `
+                <div class="danmaku-header">
+                    <span>${icon}</span>
+                    <span class="danmaku-user">${userName}</span>
+                    <span class="danmaku-time">${time}</span>
+                </div>
+                ${content ? `<div class="danmaku-content">${content}</div>` : ''}
+            `;
+
+            // 将新弹幕插入到最上面
+            container.insertBefore(danmaku, container.firstChild);
+
+            // 限制弹幕数量
+            while (container.children.length > 100) {
+                container.removeChild(container.lastChild);
+            }
+
+            // 更新统计
+            danmakuCount++;
+            document.getElementById('statDanmaku').textContent = danmakuCount;
+        }
+
+        // ==================== AI配置 ====================
+        async function loadAiConfig() {
+            try {
+                const response = await fetch('/api/plugins/list');
+                const data = await response.json();
+
+                if (data.success) {
+                    const aiPlugin = data.plugins.find(p => p.name === 'AI智能回复');
+                    if (aiPlugin && aiPlugin.config) {
+                        const config = aiPlugin.config;
+                        
+                        if (config.api_key) document.getElementById('aiApiKey').value = config.api_key;
+                        if (config.model) document.getElementById('aiModel').value = config.model;
+                        if (config.reply_probability !== undefined) {
+                            document.getElementById('aiReplyProbability').value = config.reply_probability;
+                            document.getElementById('probabilityValue').textContent = config.reply_probability;
+                        }
+                        if (config.temperature !== undefined) {
+                            document.getElementById('aiTemperature').value = config.temperature;
+                            document.getElementById('temperatureValue').textContent = config.temperature;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load AI config:', error);
+            }
+        }
+
+        document.getElementById('saveAiConfig').addEventListener('click', async () => {
+            const apiKeyInput = document.getElementById('aiApiKey');
+            const modelInput = document.getElementById('aiModel');
+            const probabilityInput = document.getElementById('aiReplyProbability');
+            const temperatureInput = document.getElementById('aiTemperature');
+
+            const apiKey = apiKeyInput ? apiKeyInput.value : '';
+            const model = modelInput ? modelInput.value : '';
+            const probability = probabilityInput ? parseFloat(probabilityInput.value) : 0;
+            const temperature = temperatureInput ? parseFloat(temperatureInput.value) : 0;
+
+            try {
+                const response = await fetch('/api/plugins/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        plugin_name: 'AI智能回复',
+                        config: {
+                            api_key: apiKey,
+                            model: model,
+                            reply_probability: parseFloat(probability),
+                            temperature: parseFloat(temperature)
+                        }
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    showToast('配置保存成功', 'success');
+                } else {
+                    showToast(result.message || '保存失败', 'error');
+                }
+            } catch (error) {
+                showToast('网络错误', 'error');
+            }
+        });
+
+        // 滑块值显示
+        document.getElementById('aiReplyProbability').addEventListener('input', (e) => {
+            if (e && e.target && e.target.value) {
+                    document.getElementById('probabilityValue').textContent = e.target.value;
+                }
+        });
+
+        document.getElementById('aiTemperature').addEventListener('input', (e) => {
+            if (e && e.target && e.target.value) {
+                    document.getElementById('temperatureValue').textContent = e.target.value;
+                }
+        });
+
+        // ==================== 快捷操作 ====================
+        document.getElementById('clearDanmaku').addEventListener('click', () => {
+            const container = document.getElementById('danmakuContainer');
+            container.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 3rem;"><p>弹幕已清空</p></div>';
+            danmakuCount = 0;
+            document.getElementById('statDanmaku').textContent = 0;
+            showToast('弹幕已清空', 'success');
+        });
+
+        document.getElementById('exportDanmaku').addEventListener('click', () => {
+            exportDanmaku();
+        });
+
+        function exportDanmaku() {
+            const container = document.getElementById('danmakuContainer');
+            const items = container.querySelectorAll('.danmaku-item');
+            
+            if (items.length === 0) {
+                showToast('暂无弹幕数据可导出', 'warning');
+                return;
+            }
+
+            const exportData = [];
+            items.forEach(item => {
+                const typeElement = item.querySelector('.danmaku-header span:first-child');
+                const userElement = item.querySelector('.danmaku-user');
+                const timeElement = item.querySelector('.danmaku-time');
+                const contentElement = item.querySelector('.danmaku-content');
+
+                const typeMap = {
+                    '💬': 'danmaku',
+                    '🎁': 'gift',
+                    '💰': 'superchat',
+                    '👑': 'guard',
+                    '👋': 'interact',
+                    '❤️': 'follow'
+                };
+
+                const type = typeMap[typeElement.textContent] || 'unknown';
+
+                exportData.push({
+                    type: type,
+                    user: userElement.textContent,
+                    time: timeElement.textContent,
+                    content: contentElement.textContent,
+                    timestamp: new Date().toISOString()
+                });
+            });
+
+            // 创建CSV
+            const csvContent = 'data:text/csv;charset=utf-8,\uFEFF' + 
+                '类型,用户名,时间,内容,时间戳\n' +
+                exportData.map(row => 
+                    `"${row.type}","${row.user}","${row.time}","${row.content}","${row.timestamp}"`
+                ).join('\n');
+
+            // 创建下载链接
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement('a');
+            link.setAttribute('href', encodedUri);
+            link.setAttribute('download', `danmaku_export_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast(`已导出 ${exportData.length} 条弹幕`, 'success');
+        }
+
+        function updateActivityStats() {
+            document.getElementById('activityGifts').textContent = activityStats.gifts;
+            document.getElementById('activityScs').textContent = activityStats.scs;
+            document.getElementById('activityGuards').textContent = activityStats.guards;
+            document.getElementById('activityFollows').textContent = activityStats.follows;
+            
+            // 更新顶部统计卡片中的礼物总价值和数量
+            const giftValueYuan = (activityStats.giftValue / 1000).toFixed(2);
+            document.getElementById('statGift').textContent = `¥${giftValueYuan}`;
+            document.getElementById('statGiftCount').textContent = `(${activityStats.gifts})`;
+        }
+
+        function updateHotspotStats(stats) {
+            if (!stats) return;
+            
+            // 更新弹幕速度
+            const danmakuSpeed = stats.danmaku_speed || 0;
+            document.getElementById('hotspotDanmakuSpeed').textContent = `${danmakuSpeed} 条/分`;
+            const danmakuPercent = Math.min((danmakuSpeed / 100) * 100, 100);
+            document.getElementById('hotspotDanmakuBar').style.width = `${danmakuPercent}%`;
+            
+            // 更新礼物价值
+            const giftValue = stats.gift_value_per_minute || 0;
+            document.getElementById('hotspotGiftValue').textContent = `¥${giftValue}`;
+            const giftPercent = Math.min((giftValue / 10000) * 100, 100);
+            document.getElementById('hotspotGiftBar').style.width = `${giftPercent}%`;
+            
+            // 更新SC数量
+            const scCount = stats.sc_count_per_minute || 0;
+            document.getElementById('hotspotScCount').textContent = `${scCount} 个`;
+            
+            // 更新爆点状态
+            const statusEl = document.getElementById('hotspotStatus');
+            if (stats.is_hotspot) {
+                statusEl.innerHTML = '🔥 爆点中！';
+                statusEl.style.background = 'linear-gradient(135deg, #fee2e2, #fecaca)';
+                statusEl.style.color = '#dc2626';
+                statusEl.style.fontWeight = '600';
+            } else {
+                statusEl.innerHTML = '等待数据...';
+                statusEl.style.background = 'var(--bg-secondary)';
+                statusEl.style.color = 'var(--text-tertiary)';
+                statusEl.style.fontWeight = '400';
+            }
+        }
+
+        // ==================== 登录功能 ====================
+        document.getElementById('generateQrcode').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/auth/qrcode', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    const qrcodeImage = document.getElementById('qrcodeImage');
+                    qrcodeImage.innerHTML = `<img src="${data.qrcode_image}" alt="登录二维码" style="width: 100%; height: 100%; border-radius: var(--radius-lg);">`;
+
+                    // 开始轮询
+                    pollQrcodeStatus(data.qrcode_key);
+                } else {
+                    showToast(data.message || '生成二维码失败', 'error');
+                }
+            } catch (error) {
+                showToast('网络错误', 'error');
+            }
+        });
+
+        async function pollQrcodeStatus(qrcodeKey) {
+            const interval = setInterval(async () => {
+                try {
+                    const response = await fetch('/api/auth/qrcode/poll', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ qrcode_key: qrcodeKey })
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        if (data.status === 'confirmed') {
+                            clearInterval(interval);
+                            showToast('登录成功', 'success');
+                            updateLoginStatus();
+                        } else if (data.status === 'expired') {
+                            clearInterval(interval);
+                            showToast('二维码已过期', 'warning');
+                        }
+                    }
+                } catch (error) {
+                    clearInterval(interval);
+                }
+            }, 2000);
+        }
+
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/auth/logout', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('已退出登录', 'success');
+                    updateLoginStatus();
+                }
+            } catch (error) {
+                showToast('网络错误', 'error');
+            }
+        });
+
+        document.getElementById('anonymousBtn').addEventListener('click', async () => {
+            try {
+                const response = await fetch('/api/auth/anonymous', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast('已切换到匿名模式', 'success');
+                    updateLoginStatus();
+                }
+            } catch (error) {
+                showToast('网络错误', 'error');
+            }
+        });
+
+        async function updateLoginStatus() {
+            try {
+                const response = await fetch('/api/auth/status');
+                const data = await response.json();
+
+                const statusArea = document.getElementById('loginStatusArea');
+                const monitorStatus = document.getElementById('monitorLoginStatus');
+
+                if (data.logged_in) {
+                    const userInfo = data.user_info;
+                    statusArea.innerHTML = `
+                        <div class="status-badge success">
+                            <span class="status-dot"></span>
+                            已登录
+                        </div>
+                        <p style="margin-top: var(--spacing-md);"><strong>${userInfo.uname}</strong></p>
+                        <p style="color: var(--text-secondary);">等级: Lv${userInfo.level}</p>
+                    `;
+
+                    monitorStatus.innerHTML = `
+                        <div class="status-badge success">
+                            <span class="status-dot"></span>
+                            已登录
+                        </div>
+                        <div style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: var(--bg-secondary); border-radius: var(--radius-lg);">
+                            <div style="display: flex; align-items: center; gap: var(--spacing-sm); margin-bottom: var(--spacing-sm);">
+                                <div style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5em; font-weight: 700;">
+                                    ${userInfo.uname.charAt(0)}
+                                </div>
+                                <div style="flex: 1;">
+                                    <div style="font-weight: 600; font-size: 1.1em; margin-bottom: 4px;">${userInfo.uname}</div>
+                                    <div style="font-size: 0.85em; color: var(--text-secondary);">UID: ${userInfo.mid || userInfo.uid || '-'}</div>
+                                </div>
+                            </div>
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-sm); margin-top: var(--spacing-md); padding-top: var(--spacing-md); border-top: 1px solid var(--border-light);">
+                                <div>
+                                    <div style="font-size: 0.75em; color: var(--text-secondary); margin-bottom: 4px;">🎖️ 等级</div>
+                                    <div style="font-weight: 600; color: var(--primary-color);">Lv${userInfo.level}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75em; color: var(--text-secondary); margin-bottom: 4px;">💰 硬币</div>
+                                    <div style="font-weight: 600; color: #f5576c;">${userInfo.coins || userInfo.money || 0}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75em; color: var(--text-secondary); margin-bottom: 4px;">💎 B币</div>
+                                    <div style="font-weight: 600; color: #4facfe;">${userInfo.wallet?.bcoin_balance || 0}</div>
+                                </div>
+                                <div>
+                                    <div style="font-size: 0.75em; color: var(--text-secondary); margin-bottom: 4px;">👑 会员</div>
+                                    <div style="font-weight: 600; color: #fb7299;">${userInfo.vip_type === 2 ? '年度大会员' : (userInfo.vip_type === 1 ? '月度大会员' : '普通用户')}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    document.getElementById('logoutBtn').style.display = 'inline-flex';
+                } else {
+                    statusArea.innerHTML = `
+                        <div class="status-badge warning">
+                            <span class="status-dot"></span>
+                            ${data.mode === 'anonymous' ? '匿名模式' : '未登录'}
+                        </div>
+                    `;
+
+                    monitorStatus.innerHTML = `
+                        <div class="status-badge warning">
+                            <span class="status-dot"></span>
+                            ${data.mode === 'anonymous' ? '匿名模式' : '未登录'}
+                        </div>
+                        <p style="margin-top: var(--spacing-md); color: var(--text-secondary);">请在账户管理页面登录以使用完整功能</p>
+                    `;
+
+                    document.getElementById('logoutBtn').style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Failed to update login status:', error);
+            }
+        }
+
+        // ==================== 插件管理 ====================
+        async function loadPlugins() {
+            try {
+                const response = await fetch('/api/plugins/list');
+                const data = await response.json();
+
+                if (data.success) {
+                    const pluginList = document.getElementById('pluginList');
+                    pluginList.innerHTML = data.plugins.map(plugin => `
+                        <div class="plugin-card ${!plugin.enabled ? 'disabled' : ''}">
+                            <div class="plugin-header">
+                                <div class="plugin-info">
+                                    <div class="plugin-name">${plugin.name}</div>
+                                    <div class="plugin-version">v${plugin.version}</div>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" ${plugin.enabled ? 'checked' : ''} onchange="togglePlugin('${plugin.name}', this.checked)">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                            <div class="plugin-description">${plugin.description}</div>
+                            <div class="plugin-footer">
+                                <div class="plugin-author">作者: ${plugin.author}</div>
+                                <button class="btn btn-secondary btn-icon" onclick="openPluginConfig('${plugin.name}')">⚙️</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (error) {
+                console.error('Failed to load plugins:', error);
+            }
+        }
+
+        async function togglePlugin(pluginName, enabled) {
+            try {
+                const response = await fetch('/api/plugins/toggle', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        plugin_name: pluginName,
+                        enabled: enabled
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    showToast(`${enabled ? '启用' : '禁用'}成功`, 'success');
+                    // 重新加载插件列表以更新UI状态
+                    await loadPlugins();
+                } else {
+                    showToast(data.message || '操作失败', 'error');
+                    // 操作失败时也重新加载,恢复正确的状态
+                    await loadPlugins();
+                }
+            } catch (error) {
+                showToast('网络错误', 'error');
+                // 网络错误时也重新加载,恢复正确的状态
+                await loadPlugins();
+            }
+        }
+
+        async function openPluginConfig(pluginName) {
+            try {
+                // 获取插件列表
+                const response = await fetch('/api/plugins/list');
+                const data = await response.json();
+
+                if (data.success) {
+                    const plugin = data.plugins.find(p => p.name === pluginName);
+                    if (!plugin) {
+                        showToast('插件不存在', 'error');
+                        return;
+                    }
+
+                    const modal = document.getElementById('modal');
+                    const modalTitle = document.getElementById('modalTitle');
+                    const modalBody = document.getElementById('modalBody');
+
+                    modalTitle.textContent = `配置 ${plugin.name}`;
+
+                    // 生成配置表单
+                    let formHtml = '';
+
+                    if (plugin.config_schema && plugin.config_schema.length > 0) {
+                        plugin.config_schema.forEach(item => {
+                            const currentValue = plugin.config[item.key] !== undefined ? plugin.config[item.key] : item.default;
+
+                            formHtml += `<div class="form-group">
+                                <label class="form-label">${item.label}</label>`;
+
+                            if (item.type === 'boolean') {
+                                formHtml += `
+                                    <div style="display: flex; align-items: center; gap: var(--spacing-sm);">
+                                        <input type="checkbox" id="config_${item.key}" ${currentValue ? 'checked' : ''}>
+                                        <span style="color: var(--text-tertiary);">${currentValue ? '启用' : '禁用'}</span>
+                                    </div>`;
+                            } else if (item.type === 'select') {
+                                formHtml += `
+                                    <select class="form-control" id="config_${item.key}">
+                                        ${item.options.map(opt => `
+                                            <option value="${opt.value}" ${currentValue === opt.value ? 'selected' : ''}>${opt.label}</option>
+                                        `).join('')}
+                                    </select>`;
+                            } else if (item.type === 'number') {
+                                formHtml += `
+                                    <input type="number" class="form-control" id="config_${item.key}" value="${currentValue}" 
+                                           ${item.min !== undefined ? `min="${item.min}"` : ''} 
+                                           ${item.max !== undefined ? `max="${item.max}"` : ''} 
+                                           ${item.step !== undefined ? `step="${item.step}"` : ''}>`;
+                            } else if (item.type === 'array') {
+                                formHtml += `
+                                    <textarea class="form-control" id="config_${item.key}" rows="3" placeholder="每行一个">${Array.isArray(currentValue) ? currentValue.join('\n') : currentValue}</textarea>`;
+                            } else if (item.type === 'textarea') {
+                                const rows = item.key === 'local_qa_data' ? 8 : 4;
+                                const placeholder = item.description || '';
+                                const helpText = item.key === 'local_qa_data' ? 
+                                    `<div style="color: var(--text-tertiary); font-size: 0.8rem; margin-top: var(--spacing-xs);">
+                                        💡 格式：问题 | 回答（每行一个问答对，用竖线分隔）
+                                        <br>
+                                        示例：
+                                        <br>
+                                        你好 | 你好呀～ ✨
+                                        <br>
+                                        在吗 | 在的呢～ ✨
+                                    </div>` : '';
+                                
+                                formHtml += `
+                                    <textarea class="form-control" id="config_${item.key}" rows="${rows}" placeholder="${placeholder}" style="font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 0.9rem; line-height: 1.6;">${currentValue}</textarea>
+                                    ${helpText}`;
+                            } else {
+                                formHtml += `
+                                    <input type="text" class="form-control" id="config_${item.key}" value="${currentValue}" placeholder="${item.description || ''}">`;
+                            }
+
+                            formHtml += `</div>`;
+                        });
+
+                        formHtml += `
+                            <div style="margin-top: var(--spacing-xl); display: flex; gap: var(--spacing-md);">
+                                <button class="btn btn-primary" id="savePluginConfig" data-plugin="${pluginName}">保存配置</button>
+                                <button class="btn btn-secondary" onclick="document.getElementById('modal').classList.remove('active');">取消</button>
+                            </div>`;
+                    } else {
+                        formHtml = '<p style="color: var(--text-secondary);">该插件无可配置项</p>';
+                    }
+
+                    modalBody.innerHTML = formHtml;
+                    modal.classList.add('active');
+
+                    // 绑定保存按钮事件
+                    const saveBtn = document.getElementById('savePluginConfig');
+                    if (saveBtn) {
+                        saveBtn.addEventListener('click', async () => {
+                            await savePluginConfig(pluginName);
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to open plugin config:', error);
+                showToast('打开配置失败', 'error');
+            }
+        }
+
+        async function savePluginConfig(pluginName) {
+            try {
+                const response = await fetch('/api/plugins/list');
+                const data = await response.json();
+
+                if (data.success) {
+                    const plugin = data.plugins.find(p => p.name === pluginName);
+                    if (!plugin) return;
+
+                    const newConfig = {};
+
+                    if (plugin.config_schema) {
+                        plugin.config_schema.forEach(item => {
+                            const input = document.getElementById(`config_${item.key}`);
+                            if (!input) return;
+
+                            let value;
+
+                            if (item.type === 'boolean') {
+                                value = input.checked;
+                            } else if (item.type === 'number') {
+                                value = input.value ? parseFloat(input.value) : 0;
+                            } else if (item.type === 'array') {
+                                value = input.value ? input.value.split('\n').filter(v => v.trim()) : [];
+                            } else if (item.type === 'textarea' && item.key === 'local_qa_data') {
+                                value = input.value;
+                            } else {
+                                value = input.value;
+                            }
+
+                            newConfig[item.key] = value;
+                        });
+                    }
+
+                    const saveResponse = await fetch('/api/plugins/config', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            plugin_name: pluginName,
+                            config: newConfig
+                        })
+                    });
+
+                    const saveData = await saveResponse.json();
+
+                    if (saveData.success) {
+                        showToast('配置保存成功', 'success');
+                        document.getElementById('modal').classList.remove('active');
+                        loadPlugins(); // 重新加载插件列表
+                    } else {
+                        showToast(saveData.message || '保存失败', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to save plugin config:', error);
+                showToast('保存失败', 'error');
+            }
+        }
+
+        // ==================== 模态框 ====================
+        document.getElementById('modalClose').addEventListener('click', () => {
+            document.getElementById('modal').classList.remove('active');
+        });
+
+        // ==================== 运行时间更新 ====================
+        setInterval(() => {
+            document.getElementById('uptime').textContent = `运行时间: ${formatUptime()}`;
+        }, 1000);
+
+        // ==================== 用户分析功能 ====================
+        async function loadGlobalAnalytics() {
+            try {
+                const response = await fetch('/api/analytics/global');
+                const data = await response.json();
+
+                if (data.success) {
+                    const analytics = data.data;
+                    document.getElementById('analyticsTotalUsers').textContent = analytics.total_users || 0;
+                    document.getElementById('analyticsTotalMessages').textContent = analytics.total_messages || 0;
+                    document.getElementById('analyticsTodayUsers').textContent = analytics.today_users || 0;
+                    
+                    // 热门话题
+                    if (analytics.top_interests && analytics.top_interests.length > 0) {
+                        document.getElementById('analyticsTopInterest').textContent = analytics.top_interests[0];
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load analytics:', error);
+            }
+        }
+
+        async function searchUser(userName) {
+            if (!userName) {
+                showToast('请输入用户名', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/analytics/user/${encodeURIComponent(userName)}`);
+                const data = await response.json();
+
+                const profileCard = document.getElementById('userProfileCard');
+                const profileContent = document.getElementById('userProfileContent');
+
+                if (data.success) {
+                    const profile = data.data;
+                    profileCard.style.display = 'block';
+                    profileContent.innerHTML = `
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-md);">
+                            <div>
+                                <div style="color: var(--text-tertiary); font-size: 0.85rem;">用户名</div>
+                                <div style="font-size: 1.1rem; font-weight: 600;">${profile.user_name}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-tertiary); font-size: 0.85rem;">消息数</div>
+                                <div style="font-size: 1.1rem; font-weight: 600;">${profile.message_count}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-tertiary); font-size: 0.85rem;">首次发言</div>
+                                <div style="font-size: 1.1rem; font-weight: 600;">${profile.first_seen ? new Date(profile.first_seen * 1000).toLocaleDateString() : '-'}</div>
+                            </div>
+                            <div>
+                                <div style="color: var(--text-tertiary); font-size: 0.85rem;">最近发言</div>
+                                <div style="font-size: 1.1rem; font-weight: 600;">${profile.last_seen ? new Date(profile.last_seen * 1000).toLocaleDateString() : '-'}</div>
+                            </div>
+                        </div>
+                        ${profile.interests && Object.keys(profile.interests).length > 0 ? `
+                            <div style="margin-top: var(--spacing-lg);">
+                                <div style="color: var(--text-tertiary); font-size: 0.85rem; margin-bottom: var(--spacing-sm);">兴趣爱好</div>
+                                <div style="display: flex; flex-wrap: wrap; gap: var(--spacing-sm);">
+                                    ${Object.entries(profile.interests).map(([interest, count]) => `
+                                        <span style="background: var(--bg-secondary); padding: 4px 12px; border-radius: var(--radius-full); font-size: 0.85rem;">
+                                            ${interest} (${count})
+                                        </span>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    `;
+
+                    // 加载用户记忆
+                    loadUserMemory(userName);
+                } else {
+                    profileCard.style.display = 'none';
+                    document.getElementById('userMemoryCard').style.display = 'none';
+                    showToast(data.message || '用户不存在', 'warning');
+                }
+            } catch (error) {
+                console.error('Failed to search user:', error);
+                showToast('搜索失败', 'error');
+            }
+        }
+
+        async function loadUserMemory(userName) {
+            try {
+                const response = await fetch(`/api/analytics/memory/${encodeURIComponent(userName)}`);
+                const data = await response.json();
+
+                const memoryCard = document.getElementById('userMemoryCard');
+                const memoryContent = document.getElementById('userMemoryContent');
+
+                if (data.success) {
+                    const memory = data.data;
+                    memoryCard.style.display = 'block';
+
+                    if (memory.messages && memory.messages.length > 0) {
+                        memoryContent.innerHTML = `
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                ${memory.messages.slice(-10).map(msg => `
+                                    <div style="padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md); margin-bottom: var(--spacing-sm);">
+                                        <div style="font-size: 0.85rem; color: var(--text-tertiary);">${new Date(msg.timestamp * 1000).toLocaleString()}</div>
+                                        <div style="margin-top: var(--spacing-xs);">${msg.content}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        memoryContent.innerHTML = '<p style="color: var(--text-secondary);">暂无记忆记录</p>';
+                    }
+                } else {
+                    memoryCard.style.display = 'none';
+                }
+            } catch (error) {
+                console.error('Failed to load user memory:', error);
+            }
+        }
+
+        async function searchByInterest(interest) {
+            if (!interest) {
+                showToast('请输入兴趣关键词', 'warning');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/analytics/search?interest=${encodeURIComponent(interest)}`);
+                const data = await response.json();
+
+                const resultsDiv = document.getElementById('interestSearchResults');
+
+                if (data.success && data.data && data.data.length > 0) {
+                    resultsDiv.innerHTML = `
+                        <div style="margin-top: var(--spacing-md);">
+                            <div style="color: var(--text-tertiary); font-size: 0.85rem; margin-bottom: var(--spacing-sm);">找到 ${data.data.length} 个用户</div>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--spacing-sm);">
+                                ${data.data.map(user => `
+                                    <div style="padding: var(--spacing-sm); background: var(--bg-secondary); border-radius: var(--radius-md); text-align: center; cursor: pointer;" onclick="document.getElementById('userSearchInput').value='${user}'; searchUser('${user}');">
+                                        <div style="font-weight: 600;">${user}</div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = '<p style="color: var(--text-secondary); margin-top: var(--spacing-md);">未找到相关用户</p>';
+                }
+            } catch (error) {
+                console.error('Failed to search by interest:', error);
+                showToast('搜索失败', 'error');
+            }
+        }
+
+        // 用户分析事件绑定
+        document.getElementById('searchUserBtn').addEventListener('click', () => {
+            const userName = document.getElementById('userSearchInput');
+            if (userName && userName.value) {
+                searchUser(userName.value.trim());
+            }
+        });
+
+        document.getElementById('userSearchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.target.value) {
+                const userName = e.target.value.trim();
+                searchUser(userName);
+            }
+        });
+
+        document.getElementById('searchInterestBtn').addEventListener('click', () => {
+            const interest = document.getElementById('interestSearchInput');
+            if (interest && interest.value) {
+                searchByInterest(interest.value.trim());
+            }
+        });
+
+        document.getElementById('interestSearchInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && e.target.value) {
+                const interest = e.target.value.trim();
+                searchByInterest(interest);
+            }
+        });
+
+        // 页面切换时加载对应数据
+        document.querySelectorAll('.navbar-menu-item').forEach(item => {
+            item.addEventListener('click', () => {
+                if (item.dataset.page === 'analytics') {
+                    loadGlobalAnalytics();
+                }
+            });
+        });
+
+        // ==================== 页面生命周期管理 ====================
+        
+        // 监听页面可见性变化
+        document.addEventListener('visibilitychange', () => {
+            isPageVisible = !document.hidden;
+            
+            if (isPageVisible) {
+                console.log('[页面] 变为可见');
+                // 页面变为可见时，如果之前有连接但断开了，尝试重连
+                if (!isConnected && currentRoomId) {
+                    const savedRoomId = restoreConnectionState();
+                    if (savedRoomId) {
+                        connectToRoom(savedRoomId);
+                    }
+                }
+            } else {
+                console.log('[页面] 变为隐藏');
+                // 页面隐藏时保存连接状态
+                saveConnectionState();
+            }
+        });
+        
+        // 监听页面卸载（刷新或关闭）
+        window.addEventListener('beforeunload', () => {
+            console.log('[页面] 即将卸载');
+            // 保存连接状态，不主动关闭WebSocket
+            saveConnectionState();
+        });
+        
+        // 监听页面加载完成
+        window.addEventListener('load', () => {
+            console.log('[页面] 加载完成');
+            
+            // 检查SessionStorage中的数据
+            const savedRoomId = sessionStorage.getItem('ws_room_id');
+            const wasConnected = sessionStorage.getItem('ws_was_connected');
+            const lastActivity = sessionStorage.getItem('ws_last_activity');
+            
+            console.log('[页面] SessionStorage数据:', {
+                savedRoomId,
+                wasConnected,
+                lastActivity,
+                isConnected,
+                currentRoomId
+            });
+            
+            // 尝试恢复之前的连接
+            const roomId = restoreConnectionState();
+            if (roomId && !isConnected) {
+                console.log('[页面] 恢复连接到房间:', roomId);
+                setTimeout(() => {
+                    console.log('[页面] 开始自动重连...');
+                    connectToRoom(roomId);
+                }, 1000); // 延迟1秒连接
+            } else {
+                console.log('[页面] 无需恢复连接:', { roomId, isConnected });
+            }
+        });
+
+        // ==================== 初始化 ====================
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('[页面] DOM内容加载完成');
+            updateLoginStatus();
+            loadPlugins();
+            loadAiConfig();
+            
+            // 尝试立即恢复连接（不等待load事件）
+            const roomId = restoreConnectionState();
+            if (roomId && !isConnected) {
+                console.log('[页面] DOM加载时立即恢复连接:', roomId);
+                setTimeout(() => {
+                    if (!isConnected) {
+                        connectToRoom(roomId);
+                    }
+                }, 500); // 较短的延迟
+            }
+        });
+    </script>
+</body>
+</html>

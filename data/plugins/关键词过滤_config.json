@@ -1,0 +1,8 @@
+{
+  "mode": "blacklist",
+  "keywords": "广告\n刷屏\n违规\n测试关键词\n带空格的关键词\n外挂\n软件\n链接\nQQ群\n微信\n联系方式\n垃圾信息",
+  "use_regex": false,
+  "case_sensitive": false,
+  "filter_action": "mark",
+  "replace_text": "[已过滤]"
+}

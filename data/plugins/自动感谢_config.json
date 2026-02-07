@@ -1,0 +1,16 @@
+{
+  "enable_gift_thanks": true,
+  "enable_sc_thanks": true,
+  "enable_guard_thanks": true,
+  "min_gift_value": 100,
+  "thanks_interval": 10,
+  "max_thanks_per_minute": 10,
+  "gift_thank_messages": "感谢 {user} 的 {gift_name}！,谢谢 {user} 送的 {gift_name}~,{user} 的 {gift_name} 收到了，感谢！,感谢 {user} 的 {gift_name}，支持了！,收到 {user} 的 {gift_name}，谢谢老板！",
+  "sc_thank_messages": "感谢 {user} 的SC！,谢谢 {user} 的醒目留言！,{user} 的SC收到了，感谢支持！,感谢 {user} 的SC，太感动了！,收到 {user} 的SC，谢谢老板！",
+  "guard_thank_messages": "感谢 {user} 上{guard_name}！,欢迎 {user} 成为{guard_name}！,{user} 上{guard_name}了，感谢支持！,感谢 {user} 的{guard_name}，太棒了！,恭喜 {user} 成为{guard_name}！",
+  "vip_thank_messages": "感谢 {user} 的 {gift_name}！老板大气！,哇！{user} 送的 {gift_name}，太感谢了！,{user} 老板太给力了，感谢 {gift_name}！,收到 {user} 的 {gift_name}，老板威武！,感谢 {user} 的 {gift_name}，老板666！",
+  "batch_thanks_threshold": 5,
+  "batch_thanks_message": "感谢 {users} 等人的礼物！",
+  "enable_cumulative_thanks": true,
+  "cumulative_thresholds": "{\"1000\": \"感谢 {user} 累计送了 {total_value} 金瓜子！\", \"5000\": \"哇！{user} 累计送了 {total_value} 金瓜子，太感谢了！\", \"10000\": \"{user} 老板累计送了 {total_value} 金瓜子，感谢支持！\"}"
+}

@@ -1,0 +1,11 @@
+{
+  "enable_welcome": true,
+  "welcome_messages": "欢迎 {user} 来到直播间！,哇，{user} 来了！欢迎欢迎~,{user} 进来了，一起看直播吧！,欢迎新朋友 {user}！,Hi {user}，欢迎来到直播间~",
+  "welcome_vip_messages": "欢迎 {user} 老板来到直播间！,哇！{user} 大佬来了！,欢迎 {user} 回来！,{user} 老板好！欢迎欢迎~",
+  "welcome_interval": 30,
+  "max_welcome_per_minute": 3,
+  "welcome_new_only": false,
+  "ignore_users": "",
+  "enable_follow_welcome": true,
+  "follow_messages": "感谢 {user} 的关注！,{user} 关注了，感谢支持！,欢迎新关注 {user}！,谢谢 {user} 的关注！"
+}
